@@ -1,0 +1,16 @@
+{
+  "name": "mesa-viva-menu-platform",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm --prefix backend run dev",
+    "dev:web": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "test": "npm --prefix backend run test:smoke",
+    "start": "npm --prefix backend start",
+    "create-admin": "npm --prefix backend run create-admin",
+    "seed:demo": "npm --prefix backend run seed:demo"
+  },
+  "devDependencies": { "concurrently": "^9.1.2" }
+}

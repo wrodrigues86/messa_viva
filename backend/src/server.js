@@ -1,0 +1,20 @@
+import 'dotenv/config';
+import express from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
+import { api } from './routes/api.js';
+import { uploadsRoot } from './config/uploads.js';
+import './database/index.js';
+
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) throw new Error('JWT_SECRET deve ter pelo menos 32 caracteres. Configure backend/.env.');
+const app=express();
+app.disable('x-powered-by'); app.use(helmet({crossOriginResourcePolicy:{policy:'cross-origin'},contentSecurityPolicy:{directives:{imgSrc:["'self'",'data:','https:'],scriptSrc:["'self'"],styleSrc:["'self'","'unsafe-inline'",'https:']}}}));
+const origins=(process.env.FRONTEND_ORIGIN||'http://localhost:5173').split(',').map(v=>v.trim()); app.use(cors({origin:origins,credentials:true})); app.use(express.json({limit:'100kb'})); app.use(cookieParser());
+app.use('/api/auth/login',rateLimit({windowMs:15*60*1000,limit:10,standardHeaders:true,legacyHeaders:false}));
+app.use('/api/auth/register',rateLimit({windowMs:60*60*1000,limit:5,standardHeaders:true,legacyHeaders:false}));
+app.use('/uploads',express.static(uploadsRoot,{maxAge:'7d',immutable:true,fallthrough:false}));
+app.get('/api/health',(req,res)=>res.json({status:'ok'})); app.use('/api',api);
+app.use((err,req,res,next)=>{console.error(err);const status=err.type==='entity.parse.failed'?400:err.type==='entity.too.large'?413:err.status||500;const message=status===400?'JSON inválido.':status===413?'A requisição excede o limite permitido.':status===404?'Arquivo não encontrado.':'Ocorreu um erro interno.';res.status(status).json({error:message});});
+const port=Number(process.env.PORT||3001); export const server=app.listen(port,()=>console.log(`Mesa Viva API pronta em http://localhost:${port}`));
